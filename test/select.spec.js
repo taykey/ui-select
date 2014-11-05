@@ -255,7 +255,7 @@ describe('ui-select tests', function() {
     expect(isDropdownOpened(el2)).toEqual(true);
 
     var el3 = createUiSelect();
-    expect(el3.scope().$select.disabled).toEqual(false);
+    expect(!!el3.scope().$select.disabled).toEqual(false);
     clickMatch(el3);
     expect(isDropdownOpened(el3)).toEqual(true);
   });
@@ -482,22 +482,6 @@ describe('ui-select tests', function() {
       expect(el.find('.ui-select-choices-group .ui-select-choices-group-label').map(function() {
         return this.textContent;
       }).toArray()).toEqual(['Foo']);
-    });
-
-    it('should change activeItem through groups', function() {
-      var el = createUiSelect();
-      el.scope().$select.search = 't';
-      scope.$digest();
-      openDropdown(el);
-      var choices = el.find('.ui-select-choices-row');
-
-      expect(choices.eq(0)).toHaveClass('active');
-      expect(getGroupLabel(choices.eq(0)).text()).toBe('Foo');
-
-      triggerKeydown(el.find('input'), 40 /*Down*/);
-      scope.$digest();
-      expect(choices.eq(1)).toHaveClass('active');
-      expect(getGroupLabel(choices.eq(1)).text()).toBe('bar');
     });
   });
 
@@ -1233,6 +1217,17 @@ describe('ui-select tests', function() {
 
     });
 
+    it('should remove selected match from array if already selected', function() {
+
+      scope.selection.selectedMultiple = [scope.people[5]]; //Samantha
+      var el = createUiSelectMultiple();
+
+      clickItem(el, 'Wladimir');
+      expect(scope.selection.selectedMultiple).toEqual([scope.people[5], scope.people[4]]); //Samantha & Wladimir
+      clickItem(el, 'Wladimir');
+      expect(scope.selection.selectedMultiple).toEqual([scope.people[5]]); //Samantha
+    });
+
     it('should close dropdown after selecting', function() {
 
         scope.selection.selectedMultiple = [scope.people[5]]; //Samantha
@@ -1246,6 +1241,29 @@ describe('ui-select tests', function() {
         clickItem(el, 'Wladimir');
 
         expect(isDropdownOpened(el)).toEqual(false);
+
+    });
+
+    it('should not close when passing the keepOpen attribute', function() {
+
+      scope.selection.selectedMultiple = [scope.people[5]]; //Samantha
+      var el = compileTemplate('<ui-select multiple keep-open="true" ng-model="selection.selectedMultiple" theme="bootstrap" style="width: 800px;"> \
+                <ui-select-match placeholder="Pick one...">{{$item.name}} &lt;{{$item.email}}&gt;</ui-select-match> \
+                <ui-select-choices repeat="person in people | filter: $select.search"> \
+                  <div ng-bind-html="person.name | highlight: $select.search"></div> \
+                  <div ng-bind-html="person.email | highlight: $select.search"></div> \
+                </ui-select-choices> \
+            </ui-select>');
+      el.attr('keep-open', 'true');
+      var searchInput = el.find('.ui-select-search');
+
+      expect(isDropdownOpened(el)).toEqual(false);
+      triggerKeydown(searchInput, Key.Down);
+      expect(isDropdownOpened(el)).toEqual(true);
+
+      clickItem(el, 'Wladimir');
+
+      expect(isDropdownOpened(el)).toEqual(true);
 
     });
 
